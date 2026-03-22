@@ -7,26 +7,30 @@ import (
 )
 
 const (
-	BtnSettings = "⚙️ Настройки"
-	BtnReset    = "🔄 Перенастроить"
-	BtnAddQuote = "➕ Добавить цитату"
-	BtnCount    = "📊 Кол-во цитат"
+	BtnWantQuote = "💡 Хочу цитату!"
+	BtnSettings  = "⚙️ Настройки"
+	BtnReset     = "🔄 Перенастроить"
+	BtnAddQuote  = "➕ Добавить цитату"
+	BtnCount     = "📊 Кол-во цитат"
 )
 
 func MainMenuKeyboard(isAdmin bool) tgbotapi.ReplyKeyboardMarkup {
 	row1 := tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(BtnWantQuote),
+	)
+	row2 := tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(BtnSettings),
 		tgbotapi.NewKeyboardButton(BtnReset),
 	)
 
-	rows := [][]tgbotapi.KeyboardButton{row1}
+	rows := [][]tgbotapi.KeyboardButton{row1, row2}
 
 	if isAdmin {
-		row2 := tgbotapi.NewKeyboardButtonRow(
+		row3 := tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(BtnAddQuote),
 			tgbotapi.NewKeyboardButton(BtnCount),
 		)
-		rows = append(rows, row2)
+		rows = append(rows, row3)
 	}
 
 	kb := tgbotapi.NewReplyKeyboard(rows...)

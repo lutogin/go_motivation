@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/aluto/go-motivation/internal/config"
+	"github.com/aluto/go-motivation/internal/event"
 	"github.com/aluto/go-motivation/internal/telegram"
 )
 
@@ -16,10 +17,11 @@ type Router struct {
 	setup *SetupHandler
 	admin *AdminHandler
 	cfg   *config.Config
+	bus   *event.Bus
 }
 
-func NewRouter(bot *telegram.Bot, start *StartHandler, setup *SetupHandler, admin *AdminHandler, cfg *config.Config) *Router {
-	return &Router{bot: bot, start: start, setup: setup, admin: admin, cfg: cfg}
+func NewRouter(bot *telegram.Bot, start *StartHandler, setup *SetupHandler, admin *AdminHandler, cfg *config.Config, bus *event.Bus) *Router {
+	return &Router{bot: bot, start: start, setup: setup, admin: admin, cfg: cfg, bus: bus}
 }
 
 func (r *Router) Listen(ctx context.Context) {
@@ -52,6 +54,9 @@ func (r *Router) handleMessage(ctx context.Context, msg *tgbotapi.Message) {
 	}
 
 	switch msg.Text {
+	case telegram.BtnWantQuote:
+		r.bus.Publish(event.QuoteSendRequested{ChatID: chatID})
+		return
 	case telegram.BtnSettings:
 		r.start.HandleSettings(ctx, chatID, isAdmin)
 		return
