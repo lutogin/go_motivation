@@ -37,15 +37,15 @@ func (h *StartHandler) Handle(ctx context.Context, chatID int64) {
 	}
 }
 
-func (h *StartHandler) HandleSettings(ctx context.Context, chatID int64) {
+func (h *StartHandler) HandleSettings(ctx context.Context, chatID int64, isAdmin bool) {
 	user, err := h.users.GetByChatID(ctx, chatID)
 	if err != nil {
 		log.Errorf("get user: %v", err)
 		return
 	}
 
-	days := ""
 	dayNames := []string{"Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"}
+	days := ""
 	for i, d := range user.Weekdays {
 		if i > 0 {
 			days += ", "
@@ -65,11 +65,11 @@ func (h *StartHandler) HandleSettings(ctx context.Context, chatID int64) {
 		"🌍 Таймзона: %s\n"+
 		"📊 Цитат в день: %d\n"+
 		"📅 Дни: %s\n"+
-		"🕐 Время: %s\n\n"+
-		"Чтобы изменить — /start",
+		"🕐 Время: %s",
 		user.Timezone, user.QuotesPerDay, days, times)
 
-	if err := h.bot.Send(chatID, text, ""); err != nil {
+	kb := telegram.MainMenuKeyboard(isAdmin)
+	if err := h.bot.SendWithReplyKeyboard(chatID, text, kb); err != nil {
 		log.Errorf("send settings: %v", err)
 	}
 }

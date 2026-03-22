@@ -11,11 +11,11 @@ import (
 )
 
 type Router struct {
-	bot    *telegram.Bot
-	start  *StartHandler
-	setup  *SetupHandler
-	admin  *AdminHandler
-	cfg    *config.Config
+	bot   *telegram.Bot
+	start *StartHandler
+	setup *SetupHandler
+	admin *AdminHandler
+	cfg   *config.Config
 }
 
 func NewRouter(bot *telegram.Bot, start *StartHandler, setup *SetupHandler, admin *AdminHandler, cfg *config.Config) *Router {
@@ -42,28 +42,36 @@ func (r *Router) Listen(ctx context.Context) {
 
 func (r *Router) handleMessage(ctx context.Context, msg *tgbotapi.Message) {
 	chatID := msg.Chat.ID
+	isAdmin := chatID == r.cfg.AdminChatID
 	log.Infof("message from chat_id=%d: %s", chatID, msg.Text)
 
-	if msg.IsCommand() {
-		switch msg.Command() {
-		case "start":
-			r.admin.CancelIfActive(chatID)
-			r.start.Handle(ctx, chatID)
-		case "settings":
-			r.start.HandleSettings(ctx, chatID)
-		case "add":
-			if chatID == r.cfg.AdminChatID {
-				r.admin.Handleadd(ctx, chatID)
-			}
-		case "quotes":
-			if chatID == r.cfg.AdminChatID {
-				r.admin.HandleQuoteCount(ctx, chatID)
-			}
+	if msg.IsCommand() && msg.Command() == "start" {
+		r.admin.CancelIfActive(chatID)
+		r.start.Handle(ctx, chatID)
+		return
+	}
+
+	switch msg.Text {
+	case telegram.BtnSettings:
+		r.start.HandleSettings(ctx, chatID, isAdmin)
+		return
+	case telegram.BtnReset:
+		r.admin.CancelIfActive(chatID)
+		r.start.Handle(ctx, chatID)
+		return
+	case telegram.BtnAddQuote:
+		if isAdmin {
+			r.admin.Handleadd(ctx, chatID)
+		}
+		return
+	case telegram.BtnCount:
+		if isAdmin {
+			r.admin.HandleQuoteCount(ctx, chatID)
 		}
 		return
 	}
 
-	if chatID == r.cfg.AdminChatID {
+	if isAdmin {
 		if r.admin.HandleText(ctx, chatID, msg.Text) {
 			return
 		}

@@ -55,7 +55,7 @@ func (s *QuoteService) GetNextForUser(ctx context.Context, chatID int64) (*entit
 }
 
 func (s *QuoteService) FormatQuote(q *entity.Quote) string {
-	msg := "━━━━━━━━━━━━━━━━━━━\n\n"
+	msg := "━━━━━━━━━━━━━━\n\n"
 	msg += fmt.Sprintf("  _\"%s\"_\n", escapeMarkdownV2(q.Text))
 
 	if q.Author != "" {
@@ -66,7 +66,7 @@ func (s *QuoteService) FormatQuote(q *entity.Quote) string {
 		msg += fmt.Sprintf("\n  📝 %s\n", escapeMarkdownV2(q.Notes))
 	}
 
-	msg += "\n━━━━━━━━━━━━━━━━━━━"
+	msg += "\n━━━━━━━━━━━━━━"
 	return msg
 }
 

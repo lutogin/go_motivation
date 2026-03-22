@@ -6,6 +6,34 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+const (
+	BtnSettings = "⚙️ Настройки"
+	BtnReset    = "🔄 Перенастроить"
+	BtnAddQuote = "➕ Добавить цитату"
+	BtnCount    = "📊 Кол-во цитат"
+)
+
+func MainMenuKeyboard(isAdmin bool) tgbotapi.ReplyKeyboardMarkup {
+	row1 := tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(BtnSettings),
+		tgbotapi.NewKeyboardButton(BtnReset),
+	)
+
+	rows := [][]tgbotapi.KeyboardButton{row1}
+
+	if isAdmin {
+		row2 := tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(BtnAddQuote),
+			tgbotapi.NewKeyboardButton(BtnCount),
+		)
+		rows = append(rows, row2)
+	}
+
+	kb := tgbotapi.NewReplyKeyboard(rows...)
+	kb.ResizeKeyboard = true
+	return kb
+}
+
 var timezoneRegions = map[string][]string{
 	"Europe": {
 		"Europe/Moscow", "Europe/London", "Europe/Berlin",

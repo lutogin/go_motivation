@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/aluto/go-motivation/internal/config"
 	"github.com/aluto/go-motivation/internal/entity"
 	"github.com/aluto/go-motivation/internal/service"
 	"github.com/aluto/go-motivation/internal/telegram"
@@ -15,10 +16,11 @@ import (
 type SetupHandler struct {
 	bot   *telegram.Bot
 	users *service.UserService
+	cfg   *config.Config
 }
 
-func NewSetupHandler(bot *telegram.Bot, users *service.UserService) *SetupHandler {
-	return &SetupHandler{bot: bot, users: users}
+func NewSetupHandler(bot *telegram.Bot, users *service.UserService, cfg *config.Config) *SetupHandler {
+	return &SetupHandler{bot: bot, users: users, cfg: cfg}
 }
 
 func (h *SetupHandler) HandleCallback(ctx context.Context, chatID int64, messageID int, data string) {
@@ -246,12 +248,14 @@ func (h *SetupHandler) handleMinuteSelect(ctx context.Context, chatID int64, mes
 		"📊 Цитат в день: %d\n"+
 		"📅 Дни: %s\n"+
 		"🕐 Время: %s\n\n"+
-		"Ожидай свою первую цитату! ✨\n\n"+
-		"Изменить настройки — /start\n"+
-		"Посмотреть настройки — /settings",
+		"Ожидай свою первую цитату! ✨",
 		setupData.Timezone, setupData.QuotesPerDay, days, times)
 
 	h.bot.EditMessageText(chatID, messageID, summary, nil)
+
+	isAdmin := chatID == h.cfg.AdminChatID
+	kb := telegram.MainMenuKeyboard(isAdmin)
+	h.bot.SendWithReplyKeyboard(chatID, "Используй кнопки ниже для управления 👇", kb)
 }
 
 func extractTimeSlotNumber(step string) int {
