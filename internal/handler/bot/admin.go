@@ -77,12 +77,6 @@ func (h *AdminHandler) HandleText(ctx context.Context, chatID int64, text string
 
 	case "notes":
 		state.quote.Notes = text
-		state.step = "category"
-		kb := telegram.SkipKeyboard()
-		h.bot.SendWithInlineKeyboard(chatID, "🏷 Введи категорию (или пропусти):", kb)
-
-	case "category":
-		state.quote.Category = text
 		h.saveQuote(ctx, chatID, state)
 
 	default:
@@ -106,10 +100,6 @@ func (h *AdminHandler) HandleSkip(ctx context.Context, chatID int64) bool {
 		kb := telegram.SkipKeyboard()
 		h.bot.SendWithInlineKeyboard(chatID, "📝 Введи примечания (или пропусти):", kb)
 	case "notes":
-		state.step = "category"
-		kb := telegram.SkipKeyboard()
-		h.bot.SendWithInlineKeyboard(chatID, "🏷 Введи категорию (или пропусти):", kb)
-	case "category":
 		h.saveQuote(ctx, chatID, state)
 	default:
 		return false
@@ -131,9 +121,6 @@ func (h *AdminHandler) saveQuote(ctx context.Context, chatID int64, state *admin
 	}
 	if state.quote.Notes != "" {
 		summary += fmt.Sprintf("\n📝 %s", state.quote.Notes)
-	}
-	if state.quote.Category != "" {
-		summary += fmt.Sprintf("\n🏷 %s", state.quote.Category)
 	}
 
 	h.bot.Send(chatID, summary, "")
