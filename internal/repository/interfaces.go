@@ -18,5 +18,6 @@ type UserRepository interface {
 	GetAllActive(ctx context.Context) ([]entity.User, error)
 	UpdateSetup(ctx context.Context, chatID int64, step string, data *entity.SetupData) error
 	CompleteSetup(ctx context.Context, chatID int64, u *entity.User) error
+	RestoreActive(ctx context.Context, chatID int64) error
 	IncrementQuotePointer(ctx context.Context, chatID int64, totalQuotes int64) error
 }

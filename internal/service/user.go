@@ -53,6 +53,10 @@ func (s *UserService) CompleteSetup(ctx context.Context, chatID int64, data *ent
 	return s.users.CompleteSetup(ctx, chatID, user)
 }
 
+func (s *UserService) RestoreActive(ctx context.Context, chatID int64) error {
+	return s.users.RestoreActive(ctx, chatID)
+}
+
 func (s *UserService) GetByChatID(ctx context.Context, chatID int64) (*entity.User, error) {
 	return s.users.GetByChatID(ctx, chatID)
 }

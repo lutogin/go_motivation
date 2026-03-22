@@ -105,6 +105,19 @@ func (r *UserRepo) CompleteSetup(ctx context.Context, chatID int64, u *entity.Us
 	return err
 }
 
+func (r *UserRepo) RestoreActive(ctx context.Context, chatID int64) error {
+	update := bson.M{
+		"$set": bson.M{
+			"setup_step": entity.StepCompleted,
+			"setup_data": nil,
+			"is_active":  true,
+			"updated_at": time.Now(),
+		},
+	}
+	_, err := r.col.UpdateOne(ctx, bson.M{"chat_id": chatID}, update)
+	return err
+}
+
 func (r *UserRepo) IncrementQuotePointer(ctx context.Context, chatID int64, totalQuotes int64) error {
 	_, err := r.col.UpdateOne(ctx, bson.M{"chat_id": chatID}, bson.A{
 		bson.M{

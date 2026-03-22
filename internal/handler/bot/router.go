@@ -49,7 +49,7 @@ func (r *Router) handleMessage(ctx context.Context, msg *tgbotapi.Message) {
 
 	if msg.IsCommand() && msg.Command() == "start" {
 		r.admin.CancelIfActive(chatID)
-		r.start.Handle(ctx, chatID)
+		r.start.Handle(ctx, chatID, isAdmin)
 		return
 	}
 
@@ -62,7 +62,7 @@ func (r *Router) handleMessage(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	case telegram.BtnReset:
 		r.admin.CancelIfActive(chatID)
-		r.start.Handle(ctx, chatID)
+		r.start.HandleReset(ctx, chatID)
 		return
 	case telegram.BtnAddQuote:
 		if isAdmin {
