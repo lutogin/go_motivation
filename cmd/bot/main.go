@@ -12,11 +12,12 @@ import (
 	"go.uber.org/dig"
 
 	"github.com/aluto/go-motivation/internal/config"
+	"github.com/aluto/go-motivation/internal/email"
 	"github.com/aluto/go-motivation/internal/event"
 	bothandler "github.com/aluto/go-motivation/internal/handler/bot"
 	eventhandler "github.com/aluto/go-motivation/internal/handler/event"
-	mongorepo "github.com/aluto/go-motivation/internal/repository/mongo"
 	"github.com/aluto/go-motivation/internal/repository"
+	mongorepo "github.com/aluto/go-motivation/internal/repository/mongo"
 	"github.com/aluto/go-motivation/internal/scheduler"
 	"github.com/aluto/go-motivation/internal/service"
 	"github.com/aluto/go-motivation/internal/telegram"
@@ -60,6 +61,8 @@ func provideAll(c *dig.Container) {
 	c.Provide(func(db *mongo.Database) repository.UserRepository {
 		return mongorepo.NewUserRepo(db)
 	})
+
+	c.Provide(email.NewSender)
 
 	c.Provide(service.NewQuoteService)
 	c.Provide(service.NewUserService)

@@ -76,6 +76,10 @@ func (r *Router) handleMessage(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
+	if r.setup.HandleEmailInput(ctx, chatID, msg.Text) {
+		return
+	}
+
 	if isAdmin {
 		if r.admin.HandleText(ctx, chatID, msg.Text) {
 			return

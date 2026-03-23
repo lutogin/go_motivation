@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/aluto/go-motivation/internal/config"
+	"github.com/aluto/go-motivation/internal/email"
 	"github.com/aluto/go-motivation/internal/entity"
 	"github.com/aluto/go-motivation/internal/service"
 	"github.com/aluto/go-motivation/internal/telegram"
@@ -45,7 +46,27 @@ func (h *SetupHandler) HandleCallback(ctx context.Context, chatID int64, message
 		h.handleHourSelect(ctx, chatID, messageID, data, user)
 	case strings.HasPrefix(data, "minute:"):
 		h.handleMinuteSelect(ctx, chatID, messageID, data, user)
+	case data == "email_opt_in:yes":
+		h.handleEmailOptInYes(ctx, chatID, messageID, user)
+	case data == "email_opt_in:no":
+		h.handleEmailOptInNo(ctx, chatID, messageID, user)
 	}
+}
+
+func (h *SetupHandler) HandleEmailInput(ctx context.Context, chatID int64, text string) bool {
+	user, err := h.users.GetByChatID(ctx, chatID)
+	if err != nil || user.SetupStep != entity.StepAwaitingEmail {
+		return false
+	}
+
+	text = strings.TrimSpace(text)
+	if !email.ValidateEmail(text) {
+		h.bot.Send(chatID, "❌ Неверный формат email. Попробуй ещё раз:", "")
+		return true
+	}
+
+	h.completeSetup(ctx, chatID, 0, user.SetupData, text, true)
+	return true
 }
 
 func (h *SetupHandler) handleTimezoneRegion(ctx context.Context, chatID int64, messageID int, data string, user *entity.User) {
@@ -221,7 +242,39 @@ func (h *SetupHandler) handleMinuteSelect(ctx context.Context, chatID int64, mes
 		return
 	}
 
-	if err := h.users.CompleteSetup(ctx, chatID, setupData); err != nil {
+	if err := h.users.UpdateSetup(ctx, chatID, entity.StepAwaitingEmailOptIn, setupData); err != nil {
+		log.Errorf("update to email opt-in: %v", err)
+		return
+	}
+
+	kb := telegram.EmailOptInKeyboard()
+	h.bot.EditMessageText(chatID, messageID,
+		fmt.Sprintf("✅ Цитата #%d в %s\n\n📧 Хочешь также получать цитаты на email?", n, timeStr), &kb)
+}
+
+func (h *SetupHandler) handleEmailOptInYes(ctx context.Context, chatID int64, messageID int, user *entity.User) {
+	if user.SetupStep != entity.StepAwaitingEmailOptIn {
+		return
+	}
+
+	if err := h.users.UpdateSetup(ctx, chatID, entity.StepAwaitingEmail, user.SetupData); err != nil {
+		log.Errorf("update to email input: %v", err)
+		return
+	}
+
+	h.bot.EditMessageText(chatID, messageID, "📧 Введи свой email:", nil)
+}
+
+func (h *SetupHandler) handleEmailOptInNo(ctx context.Context, chatID int64, messageID int, user *entity.User) {
+	if user.SetupStep != entity.StepAwaitingEmailOptIn {
+		return
+	}
+
+	h.completeSetup(ctx, chatID, messageID, user.SetupData, "", false)
+}
+
+func (h *SetupHandler) completeSetup(ctx context.Context, chatID int64, messageID int, setupData *entity.SetupData, emailAddr string, emailEnabled bool) {
+	if err := h.users.CompleteSetup(ctx, chatID, setupData, emailAddr, emailEnabled); err != nil {
 		log.Errorf("complete setup: %v", err)
 		return
 	}
@@ -247,11 +300,20 @@ func (h *SetupHandler) handleMinuteSelect(ctx context.Context, chatID int64, mes
 		"🌍 Таймзона: %s\n"+
 		"📊 Цитат в день: %d\n"+
 		"📅 Дни: %s\n"+
-		"🕐 Время: %s\n\n"+
-		"Ожидай свою первую цитату! ✨",
+		"🕐 Время: %s",
 		setupData.Timezone, setupData.QuotesPerDay, days, times)
 
-	h.bot.EditMessageText(chatID, messageID, summary, nil)
+	if emailEnabled {
+		summary += fmt.Sprintf("\n📧 Email: %s", emailAddr)
+	}
+
+	summary += "\n\nОжидай свою первую цитату! ✨"
+
+	if messageID > 0 {
+		h.bot.EditMessageText(chatID, messageID, summary, nil)
+	} else {
+		h.bot.Send(chatID, summary, "")
+	}
 
 	isAdmin := chatID == h.cfg.AdminChatID
 	kb := telegram.MainMenuKeyboard(isAdmin)

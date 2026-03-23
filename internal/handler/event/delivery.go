@@ -3,6 +3,7 @@ package event
 import (
 	"context"
 
+	"github.com/aluto/go-motivation/internal/email"
 	ev "github.com/aluto/go-motivation/internal/event"
 	"github.com/aluto/go-motivation/internal/service"
 	"github.com/aluto/go-motivation/internal/telegram"
@@ -11,12 +12,14 @@ import (
 
 type DeliveryHandler struct {
 	quotes *service.QuoteService
+	users  *service.UserService
 	bot    *telegram.Bot
 	bus    *ev.Bus
+	mail   *email.Sender
 }
 
-func NewDeliveryHandler(quotes *service.QuoteService, bot *telegram.Bot, bus *ev.Bus) *DeliveryHandler {
-	return &DeliveryHandler{quotes: quotes, bot: bot, bus: bus}
+func NewDeliveryHandler(quotes *service.QuoteService, users *service.UserService, bot *telegram.Bot, bus *ev.Bus, mail *email.Sender) *DeliveryHandler {
+	return &DeliveryHandler{quotes: quotes, users: users, bot: bot, bus: bus, mail: mail}
 }
 
 func (h *DeliveryHandler) Register() {
@@ -42,6 +45,14 @@ func (h *DeliveryHandler) handle(ctx context.Context, e ev.Event) {
 	}
 
 	log.Infof("delivered quote %s to chat_id=%d", quote.ID.Hex(), req.ChatID)
+
+	user, err := h.users.GetByChatID(ctx, req.ChatID)
+	if err == nil && user.EmailEnabled && user.Email != "" {
+		if err := h.mail.SendQuote(user.Email, quote); err != nil {
+			log.Errorf("send email quote to %s: %v", user.Email, err)
+		}
+	}
+
 	h.bus.Publish(ev.QuoteDelivered{
 		ChatID:  req.ChatID,
 		QuoteID: quote.ID.Hex(),

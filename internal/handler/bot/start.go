@@ -85,6 +85,10 @@ func (h *StartHandler) sendWelcomeBack(chatID int64, user *entity.User, isAdmin 
 		"🕐 Время: %s",
 		user.Timezone, user.QuotesPerDay, days, times)
 
+	if user.EmailEnabled && user.Email != "" {
+		text += fmt.Sprintf("\n📧 Email: %s", user.Email)
+	}
+
 	kb := telegram.MainMenuKeyboard(isAdmin)
 	if err := h.bot.SendWithReplyKeyboard(chatID, text, kb); err != nil {
 		log.Errorf("send welcome back: %v", err)
@@ -121,6 +125,10 @@ func (h *StartHandler) HandleSettings(ctx context.Context, chatID int64, isAdmin
 		"📅 Дни: %s\n"+
 		"🕐 Время: %s",
 		user.Timezone, user.QuotesPerDay, days, times)
+
+	if user.EmailEnabled && user.Email != "" {
+		text += fmt.Sprintf("\n📧 Email: %s", user.Email)
+	}
 
 	kb := telegram.MainMenuKeyboard(isAdmin)
 	if err := h.bot.SendWithReplyKeyboard(chatID, text, kb); err != nil {

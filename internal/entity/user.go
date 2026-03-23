@@ -9,10 +9,12 @@ import (
 const (
 	StepAwaitingTimezone    = "awaiting_timezone"
 	StepAwaitingQuotesCount = "awaiting_quotes_count"
-	StepAwaitingWeekdays     = "awaiting_weekdays"
-	StepAwaitingTimeHour     = "awaiting_time_%d_hour"
-	StepAwaitingTimeMinute   = "awaiting_time_%d_minute"
-	StepCompleted            = "completed"
+	StepAwaitingWeekdays    = "awaiting_weekdays"
+	StepAwaitingTimeHour    = "awaiting_time_%d_hour"
+	StepAwaitingTimeMinute  = "awaiting_time_%d_minute"
+	StepAwaitingEmailOptIn  = "awaiting_email_opt_in"
+	StepAwaitingEmail       = "awaiting_email"
+	StepCompleted           = "completed"
 )
 
 type SetupData struct {
@@ -31,6 +33,8 @@ type User struct {
 	Weekdays     []int         `bson:"weekdays"         json:"weekdays"`
 	SendTimes    []string      `bson:"send_times"       json:"send_times"`
 	QuotePointer int           `bson:"quote_pointer"    json:"quote_pointer"`
+	Email        string        `bson:"email,omitempty"  json:"email,omitempty"`
+	EmailEnabled bool          `bson:"email_enabled"    json:"email_enabled"`
 	SetupStep    string        `bson:"setup_step"       json:"setup_step"`
 	SetupData    *SetupData    `bson:"setup_data,omitempty" json:"setup_data,omitempty"`
 	IsActive     bool          `bson:"is_active"        json:"is_active"`

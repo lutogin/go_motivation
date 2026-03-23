@@ -43,12 +43,14 @@ func (s *UserService) UpdateSetup(ctx context.Context, chatID int64, step string
 	return s.users.UpdateSetup(ctx, chatID, step, data)
 }
 
-func (s *UserService) CompleteSetup(ctx context.Context, chatID int64, data *entity.SetupData) error {
+func (s *UserService) CompleteSetup(ctx context.Context, chatID int64, data *entity.SetupData, emailAddr string, emailEnabled bool) error {
 	user := &entity.User{
 		Timezone:     data.Timezone,
 		QuotesPerDay: data.QuotesPerDay,
 		Weekdays:     data.Weekdays,
 		SendTimes:    data.SendTimes,
+		Email:        emailAddr,
+		EmailEnabled: emailEnabled,
 	}
 	return s.users.CompleteSetup(ctx, chatID, user)
 }
