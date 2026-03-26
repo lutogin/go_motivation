@@ -64,6 +64,12 @@ func (b *Bot) AnswerCallback(callbackID string) {
 	}
 }
 
+func (b *Bot) DeleteMessage(chatID int64, messageID int) {
+	if _, err := b.api.Request(tgbotapi.NewDeleteMessage(chatID, messageID)); err != nil {
+		log.Warnf("delete message chat_id=%d msg_id=%d: %v", chatID, messageID, err)
+	}
+}
+
 func (b *Bot) GetUpdatesChan() tgbotapi.UpdatesChannel {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60

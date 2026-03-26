@@ -55,21 +55,26 @@ func (r *Router) handleMessage(ctx context.Context, msg *tgbotapi.Message) {
 
 	switch msg.Text {
 	case telegram.BtnWantQuote:
+		r.bot.DeleteMessage(chatID, msg.MessageID)
 		r.bus.Publish(event.QuoteSendRequested{ChatID: chatID, Scheduled: false})
 		return
 	case telegram.BtnSettings:
+		r.bot.DeleteMessage(chatID, msg.MessageID)
 		r.start.HandleSettings(ctx, chatID, isAdmin)
 		return
 	case telegram.BtnReset:
+		r.bot.DeleteMessage(chatID, msg.MessageID)
 		r.admin.CancelIfActive(chatID)
 		r.start.HandleReset(ctx, chatID)
 		return
 	case telegram.BtnAddQuote:
+		r.bot.DeleteMessage(chatID, msg.MessageID)
 		if isAdmin {
 			r.admin.Handleadd(ctx, chatID)
 		}
 		return
 	case telegram.BtnCount:
+		r.bot.DeleteMessage(chatID, msg.MessageID)
 		if isAdmin {
 			r.admin.HandleQuoteCount(ctx, chatID)
 		}
