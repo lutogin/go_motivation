@@ -40,7 +40,14 @@ func (h *DeliveryHandler) handle(ctx context.Context, e ev.Event) {
 
 	formatted := h.quotes.FormatQuote(quote)
 	if err := h.bot.Send(req.ChatID, formatted, "MarkdownV2"); err != nil {
-		log.Errorf("send quote to chat_id=%d: %v", req.ChatID, err)
+		if telegram.IsBotBlocked(err) {
+			log.Warnf("bot blocked by chat_id=%d, deactivating user", req.ChatID)
+			if dbErr := h.users.Deactivate(ctx, req.ChatID); dbErr != nil {
+				log.Errorf("deactivate chat_id=%d: %v", req.ChatID, dbErr)
+			}
+		} else {
+			log.Errorf("send quote to chat_id=%d: %v", req.ChatID, err)
+		}
 		return
 	}
 

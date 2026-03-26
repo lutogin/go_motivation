@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"errors"
 	"fmt"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -67,4 +68,17 @@ func (b *Bot) GetUpdatesChan() tgbotapi.UpdatesChannel {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 	return b.api.GetUpdatesChan(u)
+}
+
+// IsBotBlocked reports whether the Telegram API error means the user blocked
+// or deleted the bot. Telegram returns HTTP 403 for both cases.
+func IsBotBlocked(err error) bool {
+	if err == nil {
+		return false
+	}
+	var tgErr *tgbotapi.Error
+	if errors.As(err, &tgErr) {
+		return tgErr.Code == 403
+	}
+	return false
 }

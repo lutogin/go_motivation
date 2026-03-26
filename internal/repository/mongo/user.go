@@ -122,6 +122,18 @@ func (r *UserRepo) RestoreActive(ctx context.Context, chatID int64) error {
 	return err
 }
 
+func (r *UserRepo) Deactivate(ctx context.Context, chatID int64) error {
+	update := bson.M{
+		"$set": bson.M{
+			"is_active":     false,
+			"email_enabled": false,
+			"updated_at":    time.Now(),
+		},
+	}
+	_, err := r.col.UpdateOne(ctx, bson.M{"chat_id": chatID}, update)
+	return err
+}
+
 func (r *UserRepo) IncrementQuotePointer(ctx context.Context, chatID int64, totalQuotes int64) error {
 	_, err := r.col.UpdateOne(ctx, bson.M{"chat_id": chatID}, bson.A{
 		bson.M{
