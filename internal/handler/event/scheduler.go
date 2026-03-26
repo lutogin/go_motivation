@@ -38,6 +38,6 @@ func (h *SchedulerHandler) handle(ctx context.Context, e ev.Event) {
 	}
 
 	for _, u := range users {
-		h.bus.Publish(ev.QuoteSendRequested{ChatID: u.ChatID})
+		h.bus.Publish(ev.QuoteSendRequested{ChatID: u.ChatID, Scheduled: true})
 	}
 }

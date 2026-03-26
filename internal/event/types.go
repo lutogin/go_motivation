@@ -13,7 +13,8 @@ type TickEvent struct {
 func (e TickEvent) EventName() string { return "tick" }
 
 type QuoteSendRequested struct {
-	ChatID int64
+	ChatID    int64
+	Scheduled bool // true = sent by cron, false = triggered manually by user
 }
 
 func (e QuoteSendRequested) EventName() string { return "quote_send_requested" }

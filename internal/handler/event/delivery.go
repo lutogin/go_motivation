@@ -44,12 +44,14 @@ func (h *DeliveryHandler) handle(ctx context.Context, e ev.Event) {
 		return
 	}
 
-	log.Infof("delivered quote %s to chat_id=%d", quote.ID.Hex(), req.ChatID)
+	log.Infof("delivered quote %s to chat_id=%d (scheduled=%v)", quote.ID.Hex(), req.ChatID, req.Scheduled)
 
-	user, err := h.users.GetByChatID(ctx, req.ChatID)
-	if err == nil && user.EmailEnabled && user.Email != "" {
-		if err := h.mail.SendQuote(user.Email, quote); err != nil {
-			log.Errorf("send email quote to %s: %v", user.Email, err)
+	if req.Scheduled {
+		user, err := h.users.GetByChatID(ctx, req.ChatID)
+		if err == nil && user.EmailEnabled && user.Email != "" {
+			if err := h.mail.SendQuote(user.Email, quote); err != nil {
+				log.Errorf("send email quote to %s: %v", user.Email, err)
+			}
 		}
 	}
 

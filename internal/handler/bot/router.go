@@ -55,7 +55,7 @@ func (r *Router) handleMessage(ctx context.Context, msg *tgbotapi.Message) {
 
 	switch msg.Text {
 	case telegram.BtnWantQuote:
-		r.bus.Publish(event.QuoteSendRequested{ChatID: chatID})
+		r.bus.Publish(event.QuoteSendRequested{ChatID: chatID, Scheduled: false})
 		return
 	case telegram.BtnSettings:
 		r.start.HandleSettings(ctx, chatID, isAdmin)
