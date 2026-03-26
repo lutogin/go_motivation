@@ -86,7 +86,7 @@ func (r *Router) handleMessage(ctx context.Context, msg *tgbotapi.Message) {
 	}
 
 	if isAdmin {
-		if r.admin.HandleText(ctx, chatID, msg.Text) {
+		if r.admin.HandleText(ctx, chatID, msg.MessageID, msg.Text) {
 			return
 		}
 	}

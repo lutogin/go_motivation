@@ -3,6 +3,7 @@ package telegram
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	log "github.com/sirupsen/logrus"
@@ -68,6 +69,37 @@ func (b *Bot) DeleteMessage(chatID int64, messageID int) {
 	if _, err := b.api.Request(tgbotapi.NewDeleteMessage(chatID, messageID)); err != nil {
 		log.Warnf("delete message chat_id=%d msg_id=%d: %v", chatID, messageID, err)
 	}
+}
+
+// DeleteMessageAfter deletes a message after the given delay in a background goroutine.
+func (b *Bot) DeleteMessageAfter(chatID int64, messageID int, d time.Duration) {
+	go func() {
+		time.Sleep(d)
+		b.DeleteMessage(chatID, messageID)
+	}()
+}
+
+// SendTracked sends a plain message and returns the sent message ID.
+func (b *Bot) SendTracked(chatID int64, text string) int {
+	msg := tgbotapi.NewMessage(chatID, text)
+	sent, err := b.api.Send(msg)
+	if err != nil {
+		log.Warnf("send tracked message: %v", err)
+		return 0
+	}
+	return sent.MessageID
+}
+
+// SendWithInlineKeyboardTracked sends a message with inline keyboard and returns the sent message ID.
+func (b *Bot) SendWithInlineKeyboardTracked(chatID int64, text string, keyboard tgbotapi.InlineKeyboardMarkup) int {
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ReplyMarkup = keyboard
+	sent, err := b.api.Send(msg)
+	if err != nil {
+		log.Warnf("send tracked inline message: %v", err)
+		return 0
+	}
+	return sent.MessageID
 }
 
 func (b *Bot) GetUpdatesChan() tgbotapi.UpdatesChannel {

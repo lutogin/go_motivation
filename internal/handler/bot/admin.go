@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/aluto/go-motivation/internal/entity"
 	"github.com/aluto/go-motivation/internal/service"
@@ -12,8 +13,9 @@ import (
 )
 
 type adminState struct {
-	step  string
-	quote entity.Quote
+	step        string
+	quote       entity.Quote
+	promptMsgID int // message ID of the last bot prompt, so we can delete it
 }
 
 type AdminHandler struct {
@@ -38,11 +40,11 @@ func (h *AdminHandler) CancelIfActive(chatID int64) {
 }
 
 func (h *AdminHandler) Handleadd(ctx context.Context, chatID int64) {
-	h.mu.Lock()
-	h.states[chatID] = &adminState{step: "text"}
-	h.mu.Unlock()
+	promptID := h.bot.SendTracked(chatID, "📝 Введи текст цитаты:")
 
-	h.bot.Send(chatID, "📝 Введи текст цитаты:", "")
+	h.mu.Lock()
+	h.states[chatID] = &adminState{step: "text", promptMsgID: promptID}
+	h.mu.Unlock()
 }
 
 func (h *AdminHandler) HandleQuoteCount(ctx context.Context, chatID int64) {
@@ -51,10 +53,13 @@ func (h *AdminHandler) HandleQuoteCount(ctx context.Context, chatID int64) {
 		log.Errorf("count quotes: %v", err)
 		return
 	}
-	h.bot.Send(chatID, fmt.Sprintf("📊 Всего цитат в базе: %d", count), "")
+	msgID := h.bot.SendTracked(chatID, fmt.Sprintf("📊 Всего цитат в базе: %d", count))
+	if msgID != 0 {
+		h.bot.DeleteMessageAfter(chatID, msgID, 5*time.Second)
+	}
 }
 
-func (h *AdminHandler) HandleText(ctx context.Context, chatID int64, text string) bool {
+func (h *AdminHandler) HandleText(ctx context.Context, chatID int64, userMsgID int, text string) bool {
 	h.mu.Lock()
 	state, ok := h.states[chatID]
 	h.mu.Unlock()
@@ -62,18 +67,22 @@ func (h *AdminHandler) HandleText(ctx context.Context, chatID int64, text string
 		return false
 	}
 
+	// Delete the previous bot prompt and the user's input message.
+	h.bot.DeleteMessage(chatID, state.promptMsgID)
+	h.bot.DeleteMessage(chatID, userMsgID)
+
 	switch state.step {
 	case "text":
 		state.quote.Text = text
 		state.step = "author"
 		kb := telegram.SkipKeyboard()
-		h.bot.SendWithInlineKeyboard(chatID, "✍️ Введи автора цитаты (или пропусти):", kb)
+		state.promptMsgID = h.bot.SendWithInlineKeyboardTracked(chatID, "✍️ Введи автора цитаты (или пропусти):", kb)
 
 	case "author":
 		state.quote.Author = text
 		state.step = "notes"
 		kb := telegram.SkipKeyboard()
-		h.bot.SendWithInlineKeyboard(chatID, "📝 Введи примечания (или пропусти):", kb)
+		state.promptMsgID = h.bot.SendWithInlineKeyboardTracked(chatID, "📝 Введи примечания (или пропусти):", kb)
 
 	case "notes":
 		state.quote.Notes = text
@@ -98,7 +107,8 @@ func (h *AdminHandler) HandleSkip(ctx context.Context, chatID int64) bool {
 	case "author":
 		state.step = "notes"
 		kb := telegram.SkipKeyboard()
-		h.bot.SendWithInlineKeyboard(chatID, "📝 Введи примечания (или пропусти):", kb)
+		// Edit the existing prompt in place — no extra message needed.
+		h.bot.EditMessageText(chatID, state.promptMsgID, "📝 Введи примечания (или пропусти):", &kb)
 	case "notes":
 		h.saveQuote(ctx, chatID, state)
 	default:
@@ -114,8 +124,7 @@ func (h *AdminHandler) saveQuote(ctx context.Context, chatID int64, state *admin
 		return
 	}
 
-	summary := fmt.Sprintf("✅ Цитата добавлена!\n\n"+
-		"📖 %s", state.quote.Text)
+	summary := fmt.Sprintf("✅ Цитата добавлена!\n\n📖 %s", state.quote.Text)
 	if state.quote.Author != "" {
 		summary += fmt.Sprintf("\n✍️ %s", state.quote.Author)
 	}
@@ -123,7 +132,10 @@ func (h *AdminHandler) saveQuote(ctx context.Context, chatID int64, state *admin
 		summary += fmt.Sprintf("\n📝 %s", state.quote.Notes)
 	}
 
-	h.bot.Send(chatID, summary, "")
+	msgID := h.bot.SendTracked(chatID, summary)
+	if msgID != 0 {
+		h.bot.DeleteMessageAfter(chatID, msgID, 2*time.Second)
+	}
 
 	h.mu.Lock()
 	delete(h.states, chatID)
