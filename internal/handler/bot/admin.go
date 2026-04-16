@@ -68,7 +68,11 @@ func (h *AdminHandler) HandleText(ctx context.Context, chatID int64, userMsgID i
 	}
 
 	// Delete the previous bot prompt and the user's input message.
-	h.bot.DeleteMessage(chatID, state.promptMsgID)
+	// For the "notes" step the prompt is deleted inside saveQuote (covers both
+	// the typed and the skipped path), so only the user message is removed here.
+	if state.step != "notes" {
+		h.bot.DeleteMessage(chatID, state.promptMsgID)
+	}
 	h.bot.DeleteMessage(chatID, userMsgID)
 
 	switch state.step {
@@ -118,6 +122,9 @@ func (h *AdminHandler) HandleSkip(ctx context.Context, chatID int64) bool {
 }
 
 func (h *AdminHandler) saveQuote(ctx context.Context, chatID int64, state *adminState) {
+	// Delete the last prompt (notes prompt) that is still visible in chat.
+	h.bot.DeleteMessage(chatID, state.promptMsgID)
+
 	if err := h.quotes.Add(ctx, &state.quote); err != nil {
 		log.Errorf("save quote: %v", err)
 		h.bot.Send(chatID, "❌ Ошибка при сохранении цитаты", "")
