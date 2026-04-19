@@ -62,10 +62,6 @@ func (s *QuoteService) FormatQuote(q *entity.Quote) string {
 		msg += fmt.Sprintf("\n  *— %s*\n", escapeMarkdownV2(q.Author))
 	}
 
-	if q.Notes != "" {
-		msg += fmt.Sprintf("\n  📝 %s\n", escapeMarkdownV2(q.Notes))
-	}
-
 	msg += "\n━━━━━━━━━━━━━━"
 	return msg
 }

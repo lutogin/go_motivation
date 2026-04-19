@@ -87,10 +87,6 @@ func FormatQuoteHTML(q *entity.Quote) string {
 		out += fmt.Sprintf(`<p style="text-align:right;color:#666;font-weight:bold">— %s</p>`, html.EscapeString(q.Author))
 	}
 
-	if q.Notes != "" {
-		out += fmt.Sprintf(`<p style="color:#888;font-size:14px;border-top:1px solid #eee;padding-top:10px;margin-top:15px">📝 %s</p>`, html.EscapeString(q.Notes))
-	}
-
 	out += `</div>`
 	return out
 }

@@ -10,6 +10,5 @@ type Quote struct {
 	ID        bson.ObjectID `bson:"_id,omitempty" json:"id"`
 	Text      string        `bson:"text"          json:"text"`
 	Author    string        `bson:"author,omitempty" json:"author,omitempty"`
-	Notes     string        `bson:"notes,omitempty"  json:"notes,omitempty"`
 	CreatedAt time.Time     `bson:"created_at"    json:"created_at"`
 }

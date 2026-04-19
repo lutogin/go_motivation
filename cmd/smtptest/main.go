@@ -43,7 +43,6 @@ func main() {
 	mock := &entity.Quote{
 		Text:   "The only way to do great work is to love what you do.",
 		Author: "Steve Jobs",
-		Notes:  "SMTP test: mocked notes (optional field in production).",
 	}
 
 	raw := email.QuoteEmailRFC822(cfg.From, testTo, mock)

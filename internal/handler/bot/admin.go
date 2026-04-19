@@ -68,11 +68,7 @@ func (h *AdminHandler) HandleText(ctx context.Context, chatID int64, userMsgID i
 	}
 
 	// Delete the previous bot prompt and the user's input message.
-	// For the "notes" step the prompt is deleted inside saveQuote (covers both
-	// the typed and the skipped path), so only the user message is removed here.
-	if state.step != "notes" {
-		h.bot.DeleteMessage(chatID, state.promptMsgID)
-	}
+	h.bot.DeleteMessage(chatID, state.promptMsgID)
 	h.bot.DeleteMessage(chatID, userMsgID)
 
 	switch state.step {
@@ -84,12 +80,6 @@ func (h *AdminHandler) HandleText(ctx context.Context, chatID int64, userMsgID i
 
 	case "author":
 		state.quote.Author = text
-		state.step = "notes"
-		kb := telegram.SkipKeyboard()
-		state.promptMsgID = h.bot.SendWithInlineKeyboardTracked(chatID, "📝 Введи примечания (или пропусти):", kb)
-
-	case "notes":
-		state.quote.Notes = text
 		h.saveQuote(ctx, chatID, state)
 
 	default:
@@ -109,11 +99,6 @@ func (h *AdminHandler) HandleSkip(ctx context.Context, chatID int64) bool {
 
 	switch state.step {
 	case "author":
-		state.step = "notes"
-		kb := telegram.SkipKeyboard()
-		// Edit the existing prompt in place — no extra message needed.
-		h.bot.EditMessageText(chatID, state.promptMsgID, "📝 Введи примечания (или пропусти):", &kb)
-	case "notes":
 		h.saveQuote(ctx, chatID, state)
 	default:
 		return false
@@ -122,7 +107,7 @@ func (h *AdminHandler) HandleSkip(ctx context.Context, chatID int64) bool {
 }
 
 func (h *AdminHandler) saveQuote(ctx context.Context, chatID int64, state *adminState) {
-	// Delete the last prompt (notes prompt) that is still visible in chat.
+	// Delete the last prompt that is still visible in chat.
 	h.bot.DeleteMessage(chatID, state.promptMsgID)
 
 	if err := h.quotes.Add(ctx, &state.quote); err != nil {
@@ -134,9 +119,6 @@ func (h *AdminHandler) saveQuote(ctx context.Context, chatID int64, state *admin
 	summary := fmt.Sprintf("✅ Цитата добавлена!\n\n📖 %s", state.quote.Text)
 	if state.quote.Author != "" {
 		summary += fmt.Sprintf("\n✍️ %s", state.quote.Author)
-	}
-	if state.quote.Notes != "" {
-		summary += fmt.Sprintf("\n📝 %s", state.quote.Notes)
 	}
 
 	msgID := h.bot.SendTracked(chatID, summary)
